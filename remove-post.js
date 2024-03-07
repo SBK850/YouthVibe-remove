@@ -12,8 +12,18 @@ const pool = mysql.createPool({
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
-  // Indicate that the content type of the response is JSON
-  res.setHeader('Content-Type', 'application/json');
+  // CORS Headers to allow all origins
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Allows access from any origin
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT'); // Specifies the methods allowed when accessing the resource
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allows headers
+  res.setHeader('Content-Type', 'application/json'); // Indicate that the content type of the response is JSON
+
+  // Preflight request handling
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204; // No Content
+    res.end();
+    return;
+  }
 
   // Check if the request method is POST
   if (req.method === 'POST') {
@@ -62,7 +72,7 @@ const server = http.createServer((req, res) => {
       }
     });
   } else {
-    // Handle other request methods
+    // Handle other request methods with 405 Method Not Allowed
     res.statusCode = 405;
     res.end(JSON.stringify({ error: 'Method Not Allowed' }));
   }
