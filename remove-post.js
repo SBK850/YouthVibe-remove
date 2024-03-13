@@ -5,9 +5,9 @@ const http = require('http');
 const pool = mysql.createPool({
   connectionLimit: 10,
   host: 'sql8.freemysqlhosting.net',
-  user: 'sql8689226',
-  password: 'SlU4NVg6gD',
-  database: 'sql8689226'
+  user: 'sql8691014',
+  password: 'zM5WlPBFpy',
+  database: 'sql8691014'
 });
 
 // Create an HTTP server
