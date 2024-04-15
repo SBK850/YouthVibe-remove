@@ -1,25 +1,19 @@
 const express = require('express');
 const mysql = require('mysql');
-const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(cors());
 
-// MySQL connection settings
-const connection = mysql.createConnection({
+// MySQL connection pool settings
+const pool = mysql.createPool({
+    connectionLimit: 10,
     host: 'mudfoot.doc.stu.mmu.ac.uk',
     user: 'bahkaras',
     password: 'hirsponD3',
     database: 'bahkaras',
     port: 6306
-});
-
-connection.connect(err => {
-    if (err) {
-        console.error('Error connecting to the database:', err);
-        return;
-    }
-    console.log('Connected to the database successfully');
 });
 
 // Route to handle post removal
@@ -33,7 +27,7 @@ app.post('/remove-post', (req, res) => {
 
     const query = 'DELETE FROM CarouselItems WHERE CarouselItemID = ?';
 
-    connection.query(query, [carouselItemId], (error, results) => {
+    pool.query(query, [carouselItemId], (error, results) => {
         if (error) {
             console.error('Error executing the query:', error);
             res.status(500).json({ message: 'Failed to remove post' });
