@@ -1,85 +1,54 @@
+const express = require('express');
 const mysql = require('mysql');
-const http = require('http');
+const bodyParser = require('body-parser');
 
-// Create a connection pool
-const pool = mysql.createPool({
-  connectionLimit: 10,
-  host: 'mudfoot.doc.stu.mmu.ac.uk',
-  user: 'bahkaras',
-  password: 'hirsponD3',
-  database: 'bahkaras'
+const app = express();
+app.use(bodyParser.json());
+
+// MySQL connection settings
+const connection = mysql.createConnection({
+    host: 'mudfoot.doc.stu.mmu.ac.uk',
+    user: 'bahkaras',
+    password: 'hirsponD3',
+    database: 'bahkaras',
+    port: 6306
 });
 
-// Create an HTTP server
-const server = http.createServer((req, res) => {
-  // CORS Headers to allow all origins
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Allows access from any origin
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT'); // Specifies the methods allowed when accessing the resource
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allows headers
-  res.setHeader('Content-Type', 'application/json'); // Indicate that the content type of the response is JSON
+connection.connect(err => {
+    if (err) {
+        console.error('Error connecting to the database:', err);
+        return;
+    }
+    console.log('Connected to the database successfully');
+});
 
-  // Preflight request handling
-  if (req.method === 'OPTIONS') {
-    res.statusCode = 204; // No Content
-    res.end();
-    return;
-  }
+// Route to handle post removal
+app.post('/remove-post', (req, res) => {
+    const carouselItemId = req.body.CarouselItemID;
 
-  // Check if the request method is POST
-  if (req.method === 'POST') {
-    let body = '';
+    if (!carouselItemId) {
+        res.status(400).json({ message: 'Invalid request: CarouselItemID is missing' });
+        return;
+    }
 
-    // Read the data from the request body
-    req.on('data', (chunk) => {
-      body += chunk;
-    });
+    const query = 'DELETE FROM CarouselItems WHERE CarouselItemID = ?';
 
-    req.on('end', () => {
-      try {
-        // Parse the JSON data
-        const postData = JSON.parse(body);
-        const carouselItemId = postData['CarouselItemID'];
-
-        // Check if CarouselItemID is present
-        if (!carouselItemId) {
-          res.statusCode = 400;
-          res.end(JSON.stringify({ error: 'CarouselItemID is required' }));
-          return;
+    connection.query(query, [carouselItemId], (error, results) => {
+        if (error) {
+            console.error('Error executing the query:', error);
+            res.status(500).json({ message: 'Failed to remove post' });
+            return;
         }
 
-        // SQL to delete the post based on user confirmation
-        const deleteSql = "DELETE FROM CarouselItems WHERE CarouselItemID = ?";
-
-        // Execute the delete query
-        pool.query(deleteSql, [carouselItemId], (error, results) => {
-          if (error) {
-            res.statusCode = 500;
-            res.end(JSON.stringify({ error: error.message }));
-            return;
-          }
-
-          // Check for successful deletion
-          if (results.affectedRows > 0) {
-            res.end(JSON.stringify({ message: 'Post removed successfully.' }));
-          } else {
-            res.statusCode = 404; // Not Found
-            res.end(JSON.stringify({ error: 'Post not found or already removed.' }));
-          }
-        });
-      } catch (error) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ error: 'Invalid JSON data' }));
-      }
+        if (results.affectedRows > 0) {
+            res.json({ message: 'Post removed successfully.' });
+        } else {
+            res.status(404).json({ message: 'No post found with the given ID or deletion was not necessary.' });
+        }
     });
-  } else {
-    // Handle other request methods with 405 Method Not Allowed
-    res.statusCode = 405;
-    res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-  }
 });
 
-// Start the server
 const PORT = 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
