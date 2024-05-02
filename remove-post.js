@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// MySQL connection pool settings
+// mySQL connection settings
 const pool = mysql.createPool({
     connectionLimit: 10,
     host: 'mudfoot.doc.stu.mmu.ac.uk',
@@ -16,7 +16,7 @@ const pool = mysql.createPool({
     port: 6306
 });
 
-// Route to handle post removal
+// route to handle post removal
 app.post('/remove-post', (req, res) => {
     const carouselItemId = req.body.CarouselItemID;
 
